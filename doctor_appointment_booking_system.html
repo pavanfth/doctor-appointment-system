@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediConnect - Doctor Appointment Booking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-white">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('explore')">
+                <div class="w-10 h-10 rounded-xl bg-cyan-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
+                    <i class="fa-solid fa-hospital-user text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-bold tracking-tight text-slate-900">MediConnect</span>
+                    <span class="block text-xs text-slate-500 font-medium">Care at your fingertips</span>
+                </div>
+            </div>
+            <nav class="flex items-center space-x-2 sm:space-x-4">
+                <button onclick="switchTab('explore')" id="nav-explore" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-cyan-50 text-cyan-700">
+                    <i class="fa-solid fa-magnifying-glass mr-1.5"></i> Find Doctors
+                </button>
+                <button onclick="switchTab('appointments')" id="nav-appointments" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-600 hover:bg-slate-100 relative">
+                    <i class="fa-solid fa-calendar-check mr-1.5"></i> My Appointments
+                    <span id="badge-count" class="absolute -top-1 -right-1 bg-cyan-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs hidden">0</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- VIEW 1: EXPLORE & BOOK -->
+        <section id="view-explore" class="space-y-6">
+            <!-- Hero Search & Filter Bar -->
+            <div class="bg-gradient-to-r from-cyan-900 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-60 h-60 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="max-w-2xl relative z-10">
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mb-2">Find & Book Verified Doctors</h1>
+                    <p class="text-slate-300 text-sm sm:text-base mb-6">Schedule in-clinic consultations or instant online video visits seamlessly.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="relative">
+                            <i class="fa-solid fa-stethoscope absolute left-3.5 top-3.5 text-slate-400"></i>
+                            <select id="filter-specialty" onchange="filterDoctors()" class="w-full bg-white text-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                <option value="">All Specializations</option>
+                            </select>
+                        </div>
+                        <div class="relative">
+                            <i class="fa-solid fa-location-dot absolute left-3.5 top-3.5 text-slate-400"></i>
+                            <input type="text" id="filter-search" oninput="filterDoctors()" placeholder="Search by doctor name..." class="w-full bg-white text-slate-800 rounded-xl pl-10 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 placeholder:text-slate-400">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctor Catalog Grid -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-slate-900">Available Specialists</h2>
+                    <span id="doctor-count" class="text-xs font-semibold text-slate-500 bg-slate-200/70 px-2.5 py-1 rounded-full">0 doctors found</span>
+                </div>
+                <div id="doctors-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Injected dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: BOOKING MODAL / PANEL -->
+        <section id="view-booking" class="hidden max-w-3xl mx-auto space-y-6">
+            <button onclick="switchTab('explore')" class="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-cyan-600 transition-colors">
+                <i class="fa-solid fa-arrow-left mr-2"></i> Back to Doctor List
+            </button>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- Doctor Summary Card Header -->
+                <div id="booking-doctor-header" class="p-6 bg-slate-50 border-b border-slate-200 flex items-center space-x-4">
+                    <!-- Injected dynamically -->
+                </div>
+
+                <form id="booking-form" onsubmit="submitAppointment(event)" class="p-6 space-y-6">
+                    <input type="hidden" id="booking-doctor-id">
+                    
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Select Consultation Date</label>
+                        <input type="date" id="booking-date" onchange="renderSlotsForSelectedDate()" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Select Time Slot</label>
+                        <div id="slots-container" class="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                            <!-- Injected dynamically -->
+                        </div>
+                        <input type="hidden" id="selected-slot-time" required>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Patient Full Name</label>
+                            <input type="text" id="patient-name" required placeholder="e.g. Alex Johnson" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Email Address</label>
+                            <input type="email" id="patient-email" required placeholder="e.g. alex@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Phone Number</label>
+                        <input type="tel" id="patient-phone" required placeholder="e.g. +1 (555) 019-2834" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+                        <button type="button" onclick="switchTab('explore')" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">Cancel</button>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 text-white hover:bg-cyan-700 shadow-lg shadow-cyan-600/20 transition-all">Confirm Appointment</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- VIEW 3: MY APPOINTMENTS -->
+        <section id="view-appointments" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-slate-900">My Appointments</h2>
+                    <p class="text-slate-500 text-sm">Manage and track your upcoming and past medical sessions.</p>
+                </div>
+            </div>
+
+            <div id="appointments-list" class="space-y-4">
+                <!-- Injected dynamically -->
+            </div>
+        </section>
+
+    </main>
+
+    <div id="modal-alert" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div id="alert-icon-wrapper" class="w-14 h-14 rounded-full mx-auto flex items-center justify-center text-2xl"></div>
+            <div>
+                <h3 id="alert-title" class="text-lg font-bold text-slate-900"></h3>
+                <p id="alert-message" class="text-slate-600 text-sm mt-1"></p>
+            </div>
+            <button onclick="closeCustomAlert()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-xl transition-colors">Got it</button>
+        </div>
+    </div>
+
+    <script>
+        // Mock Database seed data for Doctors with robust stock details
+        const initialDoctors = [
+            {
+                id: 1,
+                name: "Dr. Sarah Jenkins, M.D.",
+                specialty: "Cardiologist",
+                hospital: "Mount Sinai Heart Institute",
+                experience: "14 years experience",
+                rating: 4.9,
+                reviews: 124,
+                fee: 150,
+                image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=300",
+                slots: ["09:00 AM", "10:00 AM", "11:30 AM", "02:00 PM", "03:30 PM", "04:30 PM"]
+            },
+            {
+                id: 2,
+                name: "Dr. Robert Chen, Ph.D.",
+                specialty: "Dermatologist",
+                hospital: "Advanced Skin & Laser Care",
+                experience: "10 years experience",
+                rating: 4.8,
+                reviews: 98,
+                fee: 120,
+                image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300",
+                slots: ["10:00 AM", "11:00 AM", "01:00 PM", "02:30 PM", "04:00 PM"]
+            },
+            {
+                id: 3,
+                name: "Dr. Emily Rodriguez, M.D.",
+                specialty: "Pediatrician",
+                hospital: "Children's Health Center",
+                experience: "12 years experience",
+                rating: 4.95,
+                reviews: 156,
+                fee: 110,
+                image: "https://images.unsplash.com/photo-1594824813511-236b2b291c94?auto=format&fit=crop&q=80&w=300",
+                slots: ["08:30 AM", "09:30 AM", "11:00 AM", "02:00 PM", "03:00 PM"]
+            },
+            {
+                id: 4,
+                name: "Dr. Marcus Vance, F.A.C.S.",
+                specialty: "Orthopedic Surgeon",
+                hospital: "Metro Orthopedic & Spine",
+                experience: "18 years experience",
+                rating: 4.7,
+                reviews: 84,
+                fee: 200,
+                image: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&q=80&w=300",
+                slots: ["09:00 AM", "10:30 AM", "01:30 PM", "03:30 PM"]
+            },
+            {
+                id: 5,
+                name: "Dr. Alisha Patel, M.D.",
+                specialty: "Neurologist",
+                hospital: "Global Brain & Spine Institute",
+                experience: "11 years experience",
+                rating: 4.88,
+                reviews: 110,
+                fee: 180,
+                image: "https://images.unsplash.com/photo-1594824813353-839352e89668?auto=format&fit=crop&q=80&w=300",
+                slots: ["10:00 AM", "11:30 AM", "02:00 PM", "04:00 PM"]
+            },
+            {
+                id: 6,
+                name: "Dr. David Kim, D.D.S.",
+                specialty: "Dentist",
+                hospital: "Smile Perfect Dental Studio",
+                experience: "9 years experience",
+                rating: 4.85,
+                reviews: 92,
+                fee: 90,
+                image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=300",
+                slots: ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"]
+            }
+        ];
+
+        // State management with localStorage
+        let doctors = JSON.parse(localStorage.getItem('mediconnect_doctors')) || initialDoctors;
+        let appointments = JSON.parse(localStorage.getItem('mediconnect_appointments')) || [];
+
+        // Initialize application on load
+        window.onload = function() {
+            populateSpecialties();
+            renderDoctors(doctors);
+            updateBadge();
+            
+            // Set minimum date for booking input to today
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('booking-date').min = todayStr;
+        };
+
+        // Switch application view tabs
+        function switchTab(tabName) {
+            document.getElementById('view-explore').classList.add('hidden');
+            document.getElementById('view-booking').classList.add('hidden');
+            document.getElementById('view-appointments').classList.add('hidden');
+
+            document.getElementById('nav-explore').className = "px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-600 hover:bg-slate-100";
+            document.getElementById('nav-appointments').className = "px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all text-slate-600 hover:bg-slate-100 relative";
+
+            if (tabName === 'explore') {
+                document.getElementById('view-explore').classList.remove('hidden');
+                document.getElementById('nav-explore').className = "px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-cyan-50 text-cyan-700";
+            } else if (tabName === 'booking') {
+                document.getElementById('view-booking').classList.remove('hidden');
+            } else if (tabName === 'appointments') {
+                document.getElementById('view-appointments').classList.remove('hidden');
+                document.getElementById('nav-appointments').className = "px-3 sm:px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-cyan-50 text-cyan-700 relative";
+                renderAppointments();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Populate filter dropdown with unique specialties
+        function populateSpecialties() {
+            const specialtySelect = document.getElementById('filter-specialty');
+            const specialties = [...new Set(doctors.map(d => d.specialty))];
+            specialties.forEach(spec => {
+                const opt = document.createElement('option');
+                opt.value = spec;
+                opt.textContent = spec;
+                specialtySelect.appendChild(opt);
+            });
+        }
+
+        // Filter doctors based on specialty and search input
+        function filterDoctors() {
+            const specVal = document.getElementById('filter-specialty').value;
+            const searchVal = document.getElementById('filter-search').value.toLowerCase();
+
+            const filtered = doctors.filter(doc => {
+                const matchesSpec = !specVal || doc.specialty === specVal;
+                const matchesSearch = !searchVal || doc.name.toLowerCase().includes(searchVal) || doc.specialty.toLowerCase().includes(searchVal);
+                return matchesSpec && matchesSearch;
+            });
+
+            renderDoctors(filtered);
+        }
+
+        // Render doctor catalog cards
+        function renderDoctors(list) {
+            const grid = document.getElementById('doctors-grid');
+            document.getElementById('doctor-count').textContent = `${list.length} doctor${list.length === 1 ? '' : 's'} found`;
+            
+            if (list.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center bg-white rounded-2xl border border-slate-200">
+                        <i class="fa-solid fa-user-doctor text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-slate-600 font-semibold">No doctors found matching your filters.</p>
+                        <p class="text-slate-400 text-xs mt-1">Try resetting your search terms.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = list.map(doc => `
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                    <div>
+                        <div class="flex items-start space-x-4 mb-4">
+                            <img src="${doc.image}" alt="${doc.name}" onerror="this.src='https://placehold.co/100x100/e2e8f0/64748b?text=MD'" class="w-16 h-16 rounded-2xl object-cover shadow-sm group-hover:scale-105 transition-transform">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-slate-900 truncate text-base">${doc.name}</h3>
+                                <p class="text-xs font-semibold text-cyan-600 mt-0.5">${doc.specialty}</p>
+                                <p class="text-xs text-slate-500 truncate mt-1"><i class="fa-solid fa-hospital mr-1 text-slate-400"></i>${doc.hospital}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 py-3 border-y border-slate-100 text-xs text-slate-600 mb-4">
+                            <div><i class="fa-solid fa-clock mr-1.5 text-slate-400"></i>${doc.experience}</div>
+                            <div class="text-right"><i class="fa-solid fa-star text-amber-400 mr-1"></i><b>${doc.rating}</b> (${doc.reviews})</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Consultation Fee</span>
+                            <span class="text-lg font-bold text-slate-900">$${doc.fee}</span>
+                        </div>
+                        <button onclick="openBookingView(${doc.id})" class="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-all">
+                            Book Appointment
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Open booking interface for specific doctor
+        function openBookingView(doctorId) {
+            const doc = doctors.find(d => d.id === doctorId);
+            if (!doc) return;
+
+            document.getElementById('booking-doctor-id').value = doc.id;
+            document.getElementById('booking-doctor-header').innerHTML = `
+                <img src="${doc.image}" onerror="this.src='https://placehold.co/100x100/e2e8f0/64748b?text=MD'" class="w-14 h-14 rounded-xl object-cover">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">${doc.name}</h2>
+                    <p class="text-xs font-semibold text-cyan-600">${doc.specialty} &bull; <span class="text-slate-500">$${doc.fee} per visit</span></p>
+                    <p class="text-xs text-slate-500 mt-0.5">${doc.hospital}</p>
+                </div>
+            `;
+
+            // Default date to today
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('booking-date').value = todayStr;
+            document.getElementById('selected-slot-time').value = '';
+            document.getElementById('booking-form').reset();
+            document.getElementById('booking-date').value = todayStr;
+
+            renderSlotsForSelectedDate();
+            switchTab('booking');
+        }
+
+        // Render time slots dynamically based on doctor and date availability
+        function renderSlotsForSelectedDate() {
+            const doctorId = parseInt(document.getElementById('booking-doctor-id').value);
+            const dateVal = document.getElementById('booking-date').value;
+            const doc = doctors.find(d => d.id === doctorId);
+            const container = document.getElementById('slots-container');
+            document.getElementById('selected-slot-time').value = '';
+
+            if (!doc || !dateVal) return;
+
+            // Find already booked slots for this doctor on this date
+            const bookedTimes = appointments
+                .filter(a => a.doctor_id === doctorId && a.date === dateVal && a.status === 'Confirmed')
+                .map(a => a.time_slot);
+
+            container.innerHTML = doc.slots.map(slot => {
+                const isBooked = bookedTimes.includes(slot);
+                if (isBooked) {
+                    return `<button type="button" disabled class="py-2.5 px-2 bg-slate-100 text-slate-400 text-xs font-medium rounded-xl border border-slate-200 cursor-not-allowed line-through">${slot}</button>`;
+                }
+                return `<button type="button" onclick="selectSlot(this, '${slot}')" class="slot-btn py-2.5 px-2 bg-slate-50 hover:bg-cyan-50 border border-slate-200 hover:border-cyan-500 text-slate-700 hover:text-cyan-700 text-xs font-semibold rounded-xl transition-all">${slot}</button>`;
+            }).join('');
+        }
+
+        // Select slot handler
+        function selectSlot(btn, time) {
+            document.querySelectorAll('.slot-btn').forEach(b => {
+                b.classList.remove('bg-cyan-600', 'text-white', 'border-cyan-600', 'shadow-sm');
+                b.classList.add('bg-slate-50', 'text-slate-700', 'border-slate-200');
+            });
+            btn.classList.remove('bg-slate-50', 'text-slate-700', 'border-slate-200');
+            btn.classList.add('bg-cyan-600', 'text-white', 'border-cyan-600', 'shadow-sm');
+            document.getElementById('selected-slot-time').value = time;
+        }
+
+        // Submit appointment booking
+        function submitAppointment(event) {
+            event.preventDefault();
+            const doctor_id = parseInt(document.getElementById('booking-doctor-id').value);
+            const date = document.getElementById('booking-date').value;
+            const time_slot = document.getElementById('selected-slot-time').value;
+            const patient_name = document.getElementById('patient-name').value;
+            const patient_email = document.getElementById('patient-email').value;
+            const patient_phone = document.getElementById('patient-phone').value;
+
+            if (!time_slot) {
+                showCustomAlert('Slot Required', 'Please select an available time slot for your consultation.', 'error');
+                return;
+            }
+
+            const doc = doctors.find(d => d.id === doctor_id);
+
+            const newAppointment = {
+                id: 'APT-' + Math.floor(100000 + Math.random() * 900000),
+                doctor_id: doc.id,
+                doctor_name: doc.name,
+                doctor_specialty: doc.specialty,
+                doctor_hospital: doc.hospital,
+                doctor_image: doc.image,
+                fee: doc.fee,
+                patient_name,
+                patient_email,
+                patient_phone,
+                date,
+                time_slot,
+                status: 'Confirmed',
+                booked_at: new Date().toLocaleDateString()
+            };
+
+            appointments.unshift(newAppointment);
+            localStorage.setItem('mediconnect_appointments', JSON.stringify(appointments));
+
+            updateBadge();
+            showCustomAlert('Booking Confirmed!', `Your appointment with ${doc.name} on ${date} at ${time_slot} is successfully confirmed.`, 'success');
+            switchTab('appointments');
+        }
+
+        // Render user appointments list
+        function renderAppointments() {
+            const listEl = document.getElementById('appointments-list');
+            if (appointments.length === 0) {
+                listEl.innerHTML = `
+                    <div class="py-16 text-center bg-white rounded-2xl border border-slate-200">
+                        <i class="fa-solid fa-calendar-xmark text-4xl text-slate-300 mb-3"></i>
+                        <p class="text-slate-700 font-semibold">No appointments booked yet.</p>
+                        <p class="text-slate-400 text-xs mt-1 mb-4">Explore our specialists and book your first session.</p>
+                        <button onclick="switchTab('explore')" class="px-4 py-2 bg-cyan-600 text-white font-semibold text-xs rounded-xl hover:bg-cyan-700 transition-all">Find Doctors</button>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = appointments.map(app => `
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="flex items-start space-x-4">
+                        <img src="${app.doctor_image}" onerror="this.src='https://placehold.co/100x100/e2e8f0/64748b?text=MD'" class="w-14 h-14 rounded-xl object-cover shrink-0">
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h3 class="font-bold text-slate-900">${app.doctor_name}</h3>
+                                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold rounded-full">${app.status}</span>
+                            </div>
+                            <p class="text-xs text-cyan-600 font-semibold mt-0.5">${app.doctor_specialty}</p>
+                            <p class="text-xs text-slate-500 mt-1"><i class="fa-solid fa-calendar mr-1 text-slate-400"></i>${app.date} at <b>${app.time_slot}</b> &bull; Ref: ${app.id}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Patient: ${app.patient_name} (${app.patient_phone})</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                        <button onclick="cancelAppointment('${app.id}')" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Cancel
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Cancel appointment
+        function cancelAppointment(id) {
+            appointments = appointments.filter(a => a.id !== id);
+            localStorage.setItem('mediconnect_appointments', JSON.stringify(appointments));
+            updateBadge();
+            renderAppointments();
+            showCustomAlert('Appointment Cancelled', 'Your appointment has been successfully cancelled.', 'success');
+        }
+
+        // Update badge counter on navigation
+        function updateBadge() {
+            const badge = document.getElementById('badge-count');
+            const activeCount = appointments.filter(a => a.status === 'Confirmed').length;
+            if (activeCount > 0) {
+                badge.textContent = activeCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Custom alert dialog box (No alert() used as per requirements)
+        function showCustomAlert(title, message, type) {
+            const modal = document.getElementById('modal-alert');
+            const iconWrapper = document.getElementById('alert-icon-wrapper');
+            document.getElementById('alert-title').textContent = title;
+            document.getElementById('alert-message').textContent = message;
+
+            if (type === 'success') {
+                iconWrapper.className = "w-14 h-14 rounded-full mx-auto flex items-center justify-center text-2xl bg-emerald-100 text-emerald-600";
+                iconWrapper.innerHTML = '<i class="fa-solid fa-check"></i>';
+            } else {
+                iconWrapper.className = "w-14 h-14 rounded-full mx-auto flex items-center justify-center text-2xl bg-rose-100 text-rose-600";
+                iconWrapper.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('modal-alert').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
